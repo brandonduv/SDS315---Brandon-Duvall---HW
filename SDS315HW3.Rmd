@@ -1,0 +1,200 @@
+---
+title: "SDS 315 - Homework 3"
+author: "Brandon Duvall - bhd442"
+output:
+   pdf_document:
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.align = 'center')
+```
+
+[GitHub File Link]()
+
+```{r, include=FALSE}
+library(tidyverse)
+library(mosaic)
+```
+
+# Problem 1
+
+```{r, include=FALSE}
+gasprices <- read_csv("/Users/brandonduvall/Downloads/gasprices.csv")
+```
+
+### Part A
+
+```{r, message=FALSE}
+boot_price_competitors = do(10000)*diffmean(Price ~ Competitors, data = mosaic::resample(gasprices))
+ggplot(boot_price_competitors) + geom_histogram(aes(x=diffmean)) + labs(x="Difference in Means",y="Frequency (Out of 10,000)",title="Diff Mean of Gas Prices, Competition Or Not")
+confint(boot_price_competitors, level = 0.95)
+```
+Claim: Gas stations charge more (higher price) if they lack direct competition in sight.
+Evidence: After creating a graph of the bootstrapped distributions of the difference of means in our 10000 Monte Carlo simulations, we are 95% confident that the difference in means between gas stations with and without competition in sight is between -0.055 and 0.008 cents.
+Conclusion: Using the evidence of the Monte Carlo simulations, we are not able to support the conclusion with the confidence interval because it is not statistically significant since 0 falls within the interval which means we can not support the claim that gas stations charge more if they lack direct competition in sight.
+
+\newpage
+
+### Part B
+
+```{r}
+gasprices <- gasprices %>%
+  mutate(IncomeLevel = ifelse(Income >= median(Income),yes="High",no="Low"))
+boot_price_income = do(10000)*diffmean(Price ~ IncomeLevel, data = mosaic::resample(gasprices))
+ggplot(boot_price_income) + geom_histogram(aes(x=diffmean),bins=30) + labs(x="Difference in Means",y="Frequency (Out of 10,000)",title="Diff Mean of Gas Prices, High Income Or Not")
+confint(boot_price_income, level = 0.95)
+```
+Claim: The richer or higher the income level is for an area, the higher the gas prices will be.
+Evidence: After creating a new variable to classify income as high or low and creating a 95% confidence interval for the difference of means for gas prices within high and low income areas, we found that the difference ranges from -0.065 to -0.004 cents (with 95% confidence).
+Conclusion: With the evidence found, we are able to support the claim that the richer the area, the higher the gas prices would be because our interval does not include 0. The difference between the high areas and low areas ranges from -0.065 and -0.004 where our high income areas are higher by this range amount with 95% confidence. 
+
+\newpage
+
+### Part C
+
+```{r, message=FALSE}
+boot_price_stoplight = do(10000)*diffmean(Price ~ Stoplight, data = mosaic::resample(gasprices))
+ggplot(boot_price_stoplight) + geom_histogram(aes(x=diffmean)) + labs(x="Difference in Means",y="Frequency (Out of 10,000)",title="Diff Mean of Gas Prices, Stoplight Or Not")
+confint(boot_price_stoplight, level = 0.95)
+```
+Claim: Gas stations located next to stoplights charge more for their gas prices.
+Evidence: Upon observing the graph of our 10000 difference in means and the bootstrapped sampling distribution, we are 95% confident that the difference in means between gas prices for stations that are not located next to stoplights and those that are range between -0.04 and 0.03 cents.
+Conclusion: Since the result of our 95% confidence interval does in fact include 0 within the interval, we do not have statistically significant evidence to support our claim that gas stations located next to stoplights charge more for their gas prices.
+
+\newpage
+
+### Part D
+
+```{r, message=FALSE}
+boot_price_highway = do(10000)*diffmean(Price ~ Highway, data = mosaic::resample(gasprices))
+ggplot(boot_price_highway) + geom_histogram(aes(x=diffmean)) + labs(x="Difference in Means",y="Frequency (Out of 10,000)",title="Diff Mean of Gas Prices, Highway Or Not")
+confint(boot_price_highway, level = 0.95)
+```
+Claim: Gas stations with direct highway access charge more.
+Evidence: After running the confidence interval and creating a graph to model our bootstrapped sampling distributions of the difference in means for gas prices for stations with and without direct highway access, we are 95% confident that the difference between these two ranges from 0.008 and 0.081 cents.
+Conclusion: As a result, since our confidence interval does not include 0, the estimate is said to be statistically significant supporting the claim that gas stations with direct highway access charge more according to our data.
+
+\newpage
+
+### Part E
+
+```{r, message=FALSE}
+shell_gasprices <- gasprices %>%
+  mutate(Shell = ifelse(Brand == "Shell", yes="Shell",no="Other"))
+boot_price_brand = do(10000)*diffmean(Price ~ Shell, data = mosaic::resample(shell_gasprices))
+ggplot(boot_price_brand) + geom_histogram(aes(x=diffmean)) + labs(x="Difference in Means",y="Frequency (Out of 10,000)",title="Diff Mean of Gas Prices, Shell Or Not")
+confint(boot_price_brand, level = 0.95)
+```
+Claim: Shell gas stations charges more than all other non-Shell brands for gas.
+Evidence: Conducting a 95% confidence interval for gas prices of Shell and all other brands showed us that we are 95% confident that the difference in means ranges from -0.01 to 0.065 cents.
+Conclusion: When looking at our claim, we are unable to support the claim that Shell charges more than all other non-Shell brands because our confidence interval ranging from -0.01 to 0.065 contains 0 meaning it is not statistically significant.
+
+\newpage
+
+# Problem 2
+
+```{r, message=FALSE}
+sclass <- read_csv("/Users/brandonduvall/Downloads/sclass.csv")
+```
+
+### Part A
+
+```{r, message=FALSE}
+new_sclass <- sclass %>%
+  filter(year == 2011 & trim == "63 AMG")
+boot_mileage = do(10000)*mean(~mileage, data = mosaic::resample(new_sclass))
+ggplot(boot_mileage) + geom_histogram(aes(x=mean)) + labs(x="Means",y="Frequency",title="Mean Milage of 2011 and 63 AMG Mercedes S-Class")
+confint(boot_mileage, level = 0.95)
+```
+
+We are 95% confident that the mean mileage for 2011 S-Class Mercedes vehicles with a 63 AMG trim is within the interval ranging from 26225 to 31801 miles.
+
+\newpage
+
+### Part B
+
+```{r, message=FALSE}
+new_sclass2 <- sclass %>%
+  mutate(isBlack = ifelse(color == "Black", yes="Black",no="Not Black")) %>%
+  filter(year == 2014 & trim == "550")
+boot_black = do(10000)*prop(~isBlack, data = mosaic::resample(new_sclass2))
+ggplot(boot_black) + geom_histogram(aes(x=prop_Black)) + labs(x="Proportion",y="Frequency",title="Proportion Of Black, 2014 550 Trim S-Class Mercedes")
+confint(boot_black, level = 0.95)
+```
+
+We are 95% confident that the proportion of black cars out of all 2014, 550 S-Class Mercedes vehicles ranges from 0.416 to 0.453.
+
+\newpage
+
+# Problem 3
+
+```{r, message=FALSE}
+nbc_shows <- read_csv("/Users/brandonduvall/Downloads/nbc_pilotsurvey.csv")
+```
+
+### Part A 
+
+```{r, message=FALSE}
+nbc_EdEarl <- nbc_shows %>%
+  filter(Show == "Living with Ed" | Show == "My Name is Earl")
+boot_EdEarl = do(10000)*diffmean(Q1_Happy ~ Show, data = mosaic::resample(nbc_EdEarl))
+ggplot(boot_EdEarl) + geom_histogram(aes(x=diffmean)) + labs(x="Difference in Means",y="Frequency (Out of 10,000)",title="Diff Mean of Happiness Rating, Ed or Earl")
+confint(boot_EdEarl, level = 0.95)
+```
+Question: Is there any evidence that either one of these shows consistenly produces a higher happiness rating among viewers?
+Approach: The approach used here was to make a bootstrapped sampling distribution of 10000 simulations and to create a confidence interval based on that data to see if there was a possible difference.
+Results: The evidence I used was a 95% confidence interval identifying the difference of means of each shows' happiness rating given by viewers. I found that I am 95% confident that the difference in means for said variables ranges from -0.40 and 0.11.
+Conclusion: Using the evidence provided, we are unable to support the idea that one of these shows theoretically makes viewers more happy than the other. Both of the shows, "My Name is Earl" and "Living with Ed" had average happiness ratings of give or take 3.7 meaning that most viewers agreed that the shows made them feel happy. "Living with Ed" had very slightly higher average happiness ratings but it is not significant enough to create question. 
+
+\newpage
+
+### Part B
+
+```{r, message=FALSE}
+nbc_Annoyed <- nbc_shows %>%
+  filter(Show == "The Biggest Loser" | Show == "The Apprentice: Los Angeles")
+boot_Annoyed = do(10000)*diffmean(Q1_Annoyed ~ Show, data = mosaic::resample(nbc_Annoyed))
+ggplot(boot_Annoyed) + geom_histogram(aes(x=diffmean)) + labs(x="Difference in Means",y="Frequency (Out of 10,000)",title="Diff Mean of Annoyed Rating, TBL and TPLA")
+confint(boot_Annoyed, level = 0.95)
+```
+Question: Is there any evidence that supports the idea that one of the shows consistently produced a higher annoyed rating than the other?
+Approach: Once again, the approach here was to use a difference of means for both of the shows and their average annoyed rating by the viewers. We did 10000 Monte Carlo simulations and created a 95% confidence interval for the difference.
+Results: After using our approach, we found that the difference in average annoyed rating between "The Biggest Loser" and "The Apprentice: Los Angeles" was -0.53 to -0.02, with 95% confidence.
+Conclusion: The evidence of our confidence interval does not include the value 0 meaning that it is statistically significant and we are able to support the claim that one of the shows consistently produced a higher annoyed rating than the other. In this case, we are 95% confident that the show "The Apprentice: Los Angeles" produced a higher level of annoyed by their viewers in comparison to "The Biggest Loser." Although both shows had values below 2.5 out of 5 meaning that most viewers slightly did not agree with the shows making them feel annoyed. However, "The Apprentice: Los Angeles" had higher ratings according to our confidence interval. For the stakeholders, we might be able to question why this is. It may be possible that "The Biggest Loser" is more relatable for viewers, making it less annoying? It would be interesting to analyze this deeper.
+
+\newpage
+
+### Part C
+
+```{r, message=FALSE}
+nbc_Confused <- nbc_shows %>%
+  filter(Show == "Dancing with the Stars") %>%
+  mutate(isConfusing = ifelse(Q2_Confusing > 3, yes="Confusing",no="Not Confusing"))
+boot_Confused = do(10000)*prop(~isConfusing, data = mosaic::resample(nbc_Confused))
+ggplot(boot_Confused) + geom_histogram(aes(x=prop_Confusing)) + labs(x="Proportion",y="Frequency",title="Proportion Of Confused Viewers, Dancing with the Stars")
+confint(boot_Confused, level = 0.95)
+```
+Question: What proportion of American TV Watchers watching "Dancing with the Stars" would we expect to be confused (4 or higher for confused rating)?
+Approach: The approach here was to first classify what we consider "confused," (rating of 4 or higher) and then calculate a confidence interval of the proportion of viewers we could expect to be "confused." 
+Results: After completing the confidence, we are 95% confident that the proportion of people who are confused while watching "Dancing with the Stars" ranges from 0.0387 to 0.116. 
+Conclusion: With the evidence, I am able to conclude that the proportion of people who either agree or strongly agree with being confused while watching the show ranges from 0.0387 to 0.116 with 95% confidence. We interpret this as out of every 100 people, we estimate that 4 to 12 of them would be "confused." This is a pretty solid rating for a TV show for such a low percentage to not understand what is happening meaning viewer retention rate is likely higher and show ratings may be respectable.
+
+\newpage
+
+# Problem 4
+
+```{r, message=FALSE}
+ebay <- read_csv("/Users/brandonduvall/Downloads/ebay.csv")
+ebay_fixed <- ebay %>%
+  mutate(RevRatio = rev_after / rev_before) %>%
+  mutate(isTreatment = ifelse(adwords_pause == 1, yes="Treatment",no="Control"))
+boot_ebay = do(10000)*diffmean(RevRatio ~ isTreatment, data = mosaic::resample(ebay_fixed))
+ggplot(boot_ebay) + geom_histogram(aes(x=diffmean)) + labs(x="Difference in Means",y="Frequency (Out of 10,000)",title="Diff Mean of Rev Ratio For EBay, Paid Ads or Not")
+confint(boot_ebay, level = 0.95)
+```
+
+Question: Is the revenue ratio the same in the control groups and the treatment groups for EBay's advertising on Google's search platform?
+Approach: The approach here was to calculate in difference in means between the revenue ratio between the two groups provided. We did this with a confidence interval and by creating a new variable to show the ratio (dividing the revenue after by the revenue before).
+Results: Within the confidence interval, we found a range that the the difference in means of the revenue ratios between the two control groups ranged from -0.091 to -0.013. 
+Conclusion: The conclusion here is statistically significant because the interval does not include 0 meaning that the control group's revenue ratio was on average higher than the treatment group by anywhere from -0.0911 to -0.013 (with 95% confidence). We are able to answer the question that no, the revenue ratio is not the same for control groups and treatment groups for EBay's advertising on Google's search platform. This means that the control group (the one that continued paid ad-sharing) on average had higher revenue ratios than the DMAs (designated market areas) that turned off the paid ad-share. The evidence is able to support the idea that EBay does benefit (even if it slight) from paying for certain search terms on google's search engine because their revenue is higher from month to month than if they were to not pay for the terms.
