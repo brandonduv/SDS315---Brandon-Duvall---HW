@@ -1,0 +1,142 @@
+---
+title: "SDS315HW4"
+author: "Brandon Duvall"
+output:
+  pdf_document:
+    toc: true
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.align = 'center')
+```
+
+```{r, include=FALSE}
+library(tidyverse)
+library(mosaic)
+chi_squared_statistic = function(observed, expected) {
+  sum((observed - expected)^2 / expected)
+}
+```
+
+[GitHub File Link]()
+
+### Problem 1: Iron Bank
+
+```{r, message=FALSE}
+sim_ironBank = do(100000)*nflip(n=2021, prob=0.024)
+ggplot(sim_ironBank) + geom_histogram(aes(x=nflip), binwidth = 1) + labs(x="# Of Flagged Trades",y="Frequency",title="Distribution Of 100,000 Hypotheticle Flagged Trades For Iron Bank")
+sum(sim_ironBank >= 70)/100000
+```
+
+The null hypothesis here is that what the Securities and Exchange Commission is true and the percent of claims that gets flagged is actually 2.4% on average. The test statistic we are using here to measure evidence against the null hypothesis is the number of flagged trades by Iron Bank assuming what the Securities and Exchange Commission (SEC) is true. Our specific test statistic that actually occurred is 70 flagged trades out of 2021 while the SEC claims only 2.4% get flagged. After running 100,000 Monte Carlo simulations, we found that the probability (p-value) of getting 70 or more flagged trades assuming what the SEC is saying is true is around 0.0017. Since this p-value is really low, we can say that the situation of Iron Bank is not consistent with what the SEC claims, that only 2.4% of trades get flagged.
+
+\newpage
+
+### Problem 2: Health Inspections
+
+```{r}
+sim_health = do(100000)*nflip(n=50, prob=0.03)
+ggplot(sim_health) + geom_histogram(aes(x=nflip), binwidth = 1) + labs(x="# Of Health Code Violations",y="Frequency",title="Distribution Of 100,000 Hypotheticle Health Violations For Gourmet Bites")
+sum(sim_health >= 8)/100000
+```
+
+This problem's null hypothesis is that on average, the number of health inspections that get violated according to the local Health Department for restaurants is at a citywide average of 3%. We are observing a specific restaurant here called 'Gourmet Bites' who had 8 violations out of 50 inspections. So the test statistic is the number of violations that Gourmet Bites experienced. After running 100,000 Monte Carlo simulations, we found that the probability (p-value) of getting 8 or more violations out of 50 inspections is about 0.00017. Since the p-value is extremely low, it is unlikely to get 8 or more violations assuming what the local Health Department is saying is true, meaning the observed data from 'Gourmet Bites' is not consistent with their claims.
+
+### Problem 3: Evaluating Jury Selection for Bias
+
+```{r}
+expected_jury = c(g1 = 0.30, g2 = 0.25, g3 = 0.20, g4 = 0.15, g5 = 0.10)
+observed_jury = c(g1 = 85 ,g2 = 56, g3 = 59, g4 = 27, g5 = 13)
+
+chi_actual_jury = chi_squared_statistic(observed_jury, 240*expected_jury)
+
+chi_jury_sim = do(100000)*{
+  simulated_jury = rmultinom(1, 240, expected_jury)
+  jury_this_chi2 = chi_squared_statistic(simulated_jury, 240*expected_jury)
+  c(jury_chi = jury_this_chi2)
+}
+
+ggplot(chi_jury_sim) + geom_histogram(aes(x=jury_chi), binwidth = 1) + labs(x="Chi-Square Statistic For Jury Groups",y="Frequency",title="Distribution Of 100,000 Chi-Square Statistics For Jury Groups")
+sum(chi_jury_sim >= chi_actual_jury)/100000
+```
+
+For the question regarding Jury Selection and the respective 1-5 groups based on racial and ethnic categories, we are analyzing whether or not an observation by a specific judge matches the county's population proportions. Here are null hypothesis is that this judge is following the county's population proportions for picking jurors with the following percentages: 30%, 25%, 20%, 15%, and 10% respectively for Groups 1 through 5. To examine the probability of the observation occurring, we calculated 100,000 Monte Carlo simulations of the Chi-Square test statistic for each simulation. In this case, Chi-Square is calculated by finding the difference between the number of people expected in the group and in each of the groups for each of the 100,000 simulations. This means 100,000 Chi-Square statistics. Then, we observe how many out of these 100,000 simulations had a greater than or equal to Chi-Square statistic of our observation and the specific juror. This probability (p-value) assuming the judge is following the county's population proportions was 0.014. To elaborate, there is a 1.4% chance of getting a Chi-Square statistic of what we observed or higher. In my opinion, I think we can say that the observation is not consistent with the county's population proportion but we are not too sure because the p-value is not extremely low as it has previously been. It also depends on what we consider significant, 1.4% is still in this case a pretty big percentage. Our observation is not out of this world but is still very unlikely. This means that there could possible be some systematic bias in jury selection for the judge. Some possible explanations are that a certain group gets dismissed from cases more by the judge after arriving in court. This is a potential reason why the groups in our observations differ from the standard. Would suggest running more samples since 20 trials for this one judge is pretty low, if we had 100 trials or more, we would be able to make a more firm conclusion. So, the other explanations could be that the judge made a simple mistake and usually does not have bias. Another explanation that we could try to observe is looking at the demographics of the people who were not in the eligible pool because of the listed reasons. For example, what if one ethnic group had a much higher rate of being ineligible for whatever reason, then the judge might not have as many people of that ethnic group to choose from, causing a difference when compared to the county proportions.
+
+\newpage
+
+### Problem 4: LLM Watermarking
+
+```{r, include = FALSE}
+letters <- read_csv("/Users/brandonduvall/Downloads/letter_frequencies.csv")
+```
+
+#### Part A:
+
+```{r, include = FALSE, message=FALSE}
+brown <- readLines("/Users/brandonduvall/Downloads/brown_sentences.txt")
+```
+
+```{r}
+calculate_chi_squared = function(sentence, freq_table) {
+  
+  freq_table$Probability = freq_table$Probability / sum(freq_table$Probability)
+  
+  clean_sentence = gsub("[^A-Za-z]", "", sentence)
+  clean_sentence = toupper(clean_sentence)
+  
+  observed_counts = table(factor(strsplit(clean_sentence, "")[[1]], levels = freq_table$Letter))
+  
+  total_letters = sum(observed_counts)
+  expected_counts = total_letters * freq_table$Probability
+  
+  chi_squared_stat = sum((observed_counts - expected_counts)^2 / expected_counts)
+  
+  return(chi_squared_stat)
+}
+
+brown_chi <- c()
+for (i in 1:length(brown)){
+  brown_chi[i] <- calculate_chi_squared(brown[i], letters)
+}
+
+brown_chi = tibble(chi = brown_chi)
+
+ggplot(brown_chi) + geom_histogram(aes(x=chi), binwidth = 1) + labs(x="Chi-Square Statistic For English Sentences Using Letter Frequencies",y="Frequency",title="Null Distribution Of Chi-Square Statistic For Sentences Using Letter Frequencies")
+```
+
+Here, we are creating a null distribution of English Sentences and how much their letters differ from a standardized measurement of letter frequencies. We took 56,475 English sentences from the Brown text Corpus, calculated each of their Chi-Square statistic in relation to the letter frequencies from the Project Gutenberg texts and plotted them here to see a distribution.
+
+\newpage
+
+#### Part B:
+
+```{r}
+sentences <- c(
+  "She opened the book and started to read the first chapter, eagerly anticipating what might come next.",
+  "Despite the heavy rain, they decided to go for a long walk in the park, crossing the main avenue by the fountain in the center.",
+  "The museum’s new exhibit features ancient artifacts from various civilizations around the world.",
+  "He carefully examined the document, looking for any clues that might help solve the mystery.",
+  "The students gathered in the auditorium to listen to the guest speaker’s inspiring lecture.",
+  "Feeling vexed after an arduous and zany day at work, she hoped for a peaceful and quiet evening at home, cozying up after a quick dinner with some TV, or maybe a book on her upcoming visit to Auckland.",
+  "The chef demonstrated how to prepare a delicious meal using only locally sourced ingredients, focusing mainly on some excellent dinner recipes from Spain.",
+  "They watched the sunset from the hilltop, marveling at the beautiful array of colors in the sky.",
+  "The committee reviewed the proposal and provided many points of useful feedback to improve the project’s effectiveness.",
+  "Despite the challenges faced during the project, the team worked tirelessly to ensure its successful completion, resulting in a product that exceeded everyone’s expectations."
+)
+
+sentences_chi <- c()
+sentences_p <- c()
+
+for (i in 1:length(sentences)){
+  sentences_chi[i] <- calculate_chi_squared(sentences[i], letters)
+  sentences_p[i] <- round(sum(brown_chi >= sentences_chi[i])/56745, 3)
+}
+
+sentences_p = tibble(p_value = sentences_p)
+sentences_p
+```
+
+For this portion, we are trying to find which of the ten provided sentences was most likely produced by a watermark by comparing their Chi-Square test statistics and comparing them to the Brown Corpus sentences with the associated letter frequencies. Then, we calculate the p-value for each of the sentences to observe which one is most likely the sentence produced by the LLM, seen by an adjustment in its frequency distribution over letters. After doing this, we found that one sentence, sentence 6, had a much lower p-value of 0.009 meaning that only 0.009 sentences out of the 56,475 Brown sentences had a higher or equivalent Chi-Square test statistic. Sentence 6 was "Feeling vexed after an arduous and zany day at work, she hoped for a peaceful and quiet evening at home, cozying up after a quick dinner with some TV, or maybe a book on her upcoming visit to Auckland," and was watermarked with a change in letter frequency because its p-value was significantly low compared to our other sentences.
