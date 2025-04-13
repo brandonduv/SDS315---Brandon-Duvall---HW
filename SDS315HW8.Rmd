@@ -1,0 +1,136 @@
+---
+title: "SDS315HW8"
+author: "Brandon Duvall"
+date: "2025-04-10"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.align = 'center')
+```
+
+[GitHub File Link](https://github.com/brandonduv/SDS315---Brandon-Duvall---HW/blob/main/SDS315HW8.Rmd)
+
+```{r, include=FALSE}
+library(tidyverse)
+library(mosaic)
+```
+
+### Problem 1: regression warm up
+
+```{r, include=FALSE}
+creatinine <- read_csv("/Users/brandonduvall/Downloads/creatinine.csv")
+```
+
+#### Part A:
+
+```{r, include=FALSE}
+lm_creat = lm(creatclear ~ age, data=creatinine)
+coef(lm_creat)
+147.8129 - 0.6198*(55)
+```
+
+The creatinine clearance rate we could expect for a 55 year old is 113.72. We were able to determine this using a simple linear model that uses this equation: Expected Creatinine = 147.81 - 0.62 * Age, where age determines how much our creatinine clearance rate decreases. So, for a 55 year old, we get the equation, Expected Creatinine (55 YO) = 147.81 - 0.62*(55), giving us 113.72.
+
+#### Part B:
+
+Similar to the previous part, we found how the creatinine clearance rate changes using our linear model. Since we are talking about something that changes in our equation, it must be the second number that is being multiplied by Age, or -0.62, the rate of change. Another way to identify this after getting our equation would be looking at the units of the variable, which in this case is 0.62 in mL/minute while Age in years, and because they multiply, this shows that our clearance rate changes by 0.62 mL/minute per year.
+
+#### Part C:
+
+```{r, include=FALSE}
+147.8129 - 0.6198*(40)
+135 - 123.0209
+147.8129 - 0.6198*(60)
+112 - 110.6249
+```
+
+We were able to determine that the 40 year old is healthier for their age with a clearance rate of 135 than the 60 year old with a clearance rate of 112. To determine this, we first start by getting their expected clearance rates using our linear model.
+
+For the 40 year old it would look like:
+Expected Creatinine (40 YO) = 147.81 - 0.62*(40), giving us 123.02
+
+For the 60 year old it would look like:
+Expected Creatinine (60 YO) = 147.81 - 0.62*(60), giving us 110.62
+
+Now, to make a fair comparison, we need to compare their residuals with each other and how much they are above or below what we expect. This is Actual - Expected, so 135 - 123.02 for the 40 year old and 112 - 110.62, giving us our respective residuals of 11.97 and 1.38. This indicates that the 40 year old's clearance rate is much higher than expected compared to the 60 year old (11.97 > 1.38), making them "healthier" in this context.
+
+\newpage
+
+### Problem 2: Modeling disease growth
+
+```{r,include=FALSE}
+covid <- read_csv("/Users/brandonduvall/Downloads/covid.csv")
+```
+
+In this dataset, we are looking at the growth rate of deaths in two European countries (Italy/Spain) via reported COVID-19 deaths during the first hard hitting months, February and March of 2020.
+
+#### Italy
+
+```{r, include=FALSE}
+covid_italy <- covid[covid$country == "Italy", ]
+lm_italy = lm(log(deaths) ~ days_since_first_death, data=covid_italy)
+coef(lm_italy)
+
+boot_lm_italy = do(10000)*{
+  coef(lm(log(deaths) ~ days_since_first_death, data = mosaic::resample(covid_italy)))
+}
+
+boot_lm_italy2 = do(10000)*{
+  (70/coef(lm(log(deaths) ~ days_since_first_death, data = mosaic::resample(covid_italy)))/100)
+}
+
+confint(boot_lm_italy, level = 0.95)
+confint(boot_lm_italy2, level = 0.95)
+```
+
+After bootstrapping, we have estimated the exponential growth rate of COVID-19 deaths in Italy to be about 0.1761 and with 95% confidence that it is between 0.1586 and 0.2082.
+
+Additionally, we used bootstrapping to estimate the doubling time for Italy's COVID-19 deaths to be about 3.9 days and with 95% confidence that it ranges from 3.4 days to 4.4 days.
+
+#### Spain
+
+```{r,include=FALSE}
+covid_spain <- covid[covid$country == "Spain", ]
+lm_spain = lm(log(deaths) ~ days_since_first_death, data=covid_spain)
+coef(lm_spain)
+
+boot_lm_spain = do(10000)*{
+  coef(lm(log(deaths) ~ days_since_first_death, data = mosaic::resample(covid_spain)))
+}
+
+boot_lm_spain2 = do(10000)*{
+  (70/coef(lm(log(deaths) ~ days_since_first_death, data = mosaic::resample(covid_spain)))/100)
+}
+
+confint(boot_lm_spain, level = 0.95)
+confint(boot_lm_spain2, level = 0.95)
+```
+For Spain, our estimate of growth rate of COVID-19 deaths is around 0.2818 while we can state with 95% confidence that the growth rate is between 0.2348 and 0.3174.
+
+Furthermore, our estimate of the doubling time of COVID-19 deaths for Spain was about 2.6 days. Though, we can say with 95% confidence that the doubling time of Spain's COVID-19 deaths is between 2.2 days and 3.0 days.
+
+#### Graph Of Deaths Over Time
+
+```{r}
+ggplot(covid) + 
+   geom_line(aes(x=days_since_first_death, y=deaths, color = country)) + labs(x="# of Days Since First Death",y="# of Deaths",title="Expontial Growth Model of COVID-19 Deaths by Days Since First Death")
+```
+
+\newpage
+
+### Problem 3: price elasticity of demand
+
+```{r,include=FALSE}
+milk <- read_csv("/Users/brandonduvall/Downloads/milk.csv")
+```
+
+```{r, include=FALSE}
+lm_milk = lm(log(sales) ~ log(price), data=milk)
+coef(lm_milk)
+
+boot_milk = do(10000)*lm(log(sales) ~ log(price), data= mosaic::resample(milk))
+
+confint(boot_milk, level = 0.95)
+```
+Using the dataset, we estimate the price elasticity of demand for milk to be -1.52 and we are 95% confident (via bootstrapping), that the true price elasticity of demand for milk ranges from -1.78 to -1.45. To do this, we bootstrapped our original dataset and took both the logarithms of our two variables (sales/price) and created a linear model for them to find our price elasticity demand. Finally, to interpret our numbers, if the elasticity demand was -1.62, on average a 1% increase in the price of milk would mean consumers would want to buy 1.62% less of it.
